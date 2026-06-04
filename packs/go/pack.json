@@ -1,0 +1,9 @@
+{
+  "id": "go",
+  "displayName": "Go",
+  "status": "spec-only",
+  "language": "go",
+  "markers": ["go.mod"],
+  "classHint": "SERVICE",
+  "$note": "FUTURE — spec-only placeholder. No commands or hooks installed yet. To flesh this out, see ../PACK-SPEC.md ('Authoring a new pack')."
+}

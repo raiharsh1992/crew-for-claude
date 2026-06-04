@@ -1,0 +1,9 @@
+{
+  "id": "node",
+  "displayName": "Node.js (npm / pnpm / yarn)",
+  "status": "spec-only",
+  "language": "node",
+  "markers": ["package.json", "pnpm-lock.yaml", "yarn.lock", "package-lock.json"],
+  "classHint": "SERVICE",
+  "$note": "FUTURE — spec-only placeholder. No commands or hooks installed yet. The package manager is resolved by lockfile (pnpm-lock.yaml -> pnpm, yarn.lock -> yarn, package-lock.json -> npm). To flesh this out, see ../PACK-SPEC.md ('Authoring a new pack')."
+}

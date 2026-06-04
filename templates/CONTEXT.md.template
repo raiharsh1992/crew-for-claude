@@ -1,0 +1,73 @@
+# <PROJECT / MODULE NAME> — Orientation
+
+This is the **orientation** half of the context contract — what this repo owns and how to
+navigate it. The **rules** half is `CLAUDE.md`. Anyone (human or agent) picking up work
+here reads: root `CLAUDE.md` → this file → the module's `CLAUDE.md` → design docs → code.
+
+> **Freshness is mandatory.** Any change that alters this module's tables, endpoints,
+> events, or cross-module contracts updates this file in the *same* change. Stale
+> orientation is a review-blocker.
+
+---
+
+## What this repo owns
+
+<One paragraph: the responsibility boundary. What is this repo the source of truth for,
+and what does it explicitly NOT own (defers to another module)?>
+
+---
+
+## The one file to read first
+
+<Path to the single file that best reveals how this repo works — a reference endpoint, a
+core model, the main entry point. "If you read one file before touching this repo, read
+this one.">
+
+---
+
+## Data model
+
+<The key entities and their relationships. A short table or a mermaid diagram. Don't
+duplicate the schema — point at it and explain the *shape* and the *why*.>
+
+| Entity | Owns | Key relationships |
+|---|---|---|
+| <…> | <…> | <…> |
+
+---
+
+## Endpoints / public surface
+
+<The API/CLI/events this repo exposes. Group by resource. Note auth/access requirements.>
+
+| Method + path | Purpose | Access required |
+|---|---|---|
+| <…> | <…> | <…> |
+
+---
+
+## Cross-module contracts
+
+<What this repo produces or consumes that OTHER repos depend on — events, shared schema,
+API paths. This is the part most likely to go stale and most expensive when it does.>
+
+- **Produces:** <events emitted, data published>
+- **Consumes:** <events/APIs it depends on from other modules>
+
+---
+
+## State machines
+
+<If this repo owns any stateful entity, document the states and legal transitions. A
+mermaid `stateDiagram` is ideal. Illegal transitions are bugs — make them visible.>
+
+---
+
+## Domain glossary
+
+The project's vocabulary. **Use these terms; don't invent synonyms.** If you need a new
+term, add it here first.
+
+| Term | Means | Not to be confused with |
+|---|---|---|
+| <…> | <…> | <…> |

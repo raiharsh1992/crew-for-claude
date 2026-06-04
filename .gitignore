@@ -1,0 +1,43 @@
+# ── Secrets — NEVER commit (allowlist *.example / *.template only) ──
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+*.secret
+
+# ── NO SCRATCH IN GIT, EVER ──
+# Throwaway agent/dev artifacts must never be committed.
+.handoff/
+.local/
+tmp/
+tmp*/
+*_out.txt
+*_output.txt
+wave*_*.txt
+scratch/
+*.scratch
+
+# ── Agent memory — local/personal entries only (team entries ARE committed) ──
+# The learning loop's memory lives in .claude/memory/. Team-shareable memories
+# (<slug>.md) are committed so the whole repo inherits them. Personal working-style
+# (<slug>.local.md) is local-only — never bind teammates to your preferences.
+.claude/memory/*.local.md
+
+# ── OS / editor junk ──
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# ── Language ──
+__pycache__/
+*.py[cod]
+node_modules/
+.venv/
+venv/
+dist/
+build/

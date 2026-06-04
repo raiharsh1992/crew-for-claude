@@ -1,0 +1,78 @@
+{
+  "id": "python-fastapi",
+  "displayName": "Python / FastAPI",
+  "status": "active",
+  "language": "python",
+  "markers": ["pyproject.toml", "setup.cfg", "requirements.txt"],
+  "classHint": "SERVICE",
+
+  "verifyDefaults": {
+    "$comment": "Genericized lint + test + coverage chain for a Python service with a .venv at the repo root. Swap flake8/mypy/pytest for ruff/etc. to match your project. These are copied into skills-config.json verify.defaults.python on activation (only stages the user hasn't set).",
+    "verify": "flake8 . && mypy . && pytest --cov --cov-report=term-missing",
+    "lint": "flake8 . && mypy .",
+    "test": "pytest --cov --cov-report=term-missing"
+  },
+
+  "commands": [
+    {
+      "name": "new-model",
+      "file": "commands/new-model.md",
+      "summary": "Scaffold a new ORM model following project conventions."
+    },
+    {
+      "name": "new-router",
+      "file": "commands/new-router.md",
+      "summary": "Scaffold a new API router with the project's auth/validation wiring."
+    },
+    {
+      "name": "new-event",
+      "file": "commands/new-event.md",
+      "summary": "Add a new outbound event via the transactional-outbox pattern."
+    },
+    {
+      "name": "new-sqs-handler",
+      "file": "commands/new-sqs-handler.md",
+      "summary": "Add a new inbound async message/queue consumer (DLQ-friendly, dedup, tenant re-derivation)."
+    },
+    {
+      "name": "lint",
+      "file": "commands/lint.md",
+      "summary": "Lint and format the codebase (black/isort/flake8/mypy/bandit)."
+    },
+    {
+      "name": "run-tests",
+      "file": "commands/run-tests.md",
+      "summary": "Run the test suite with coverage the way CI runs it."
+    },
+    {
+      "name": "audit",
+      "file": "commands/audit.md",
+      "summary": "Full security + convention compliance audit checklist."
+    },
+    {
+      "name": "migrate",
+      "file": "commands/migrate.md",
+      "summary": "Create and apply a database migration."
+    }
+  ],
+
+  "hooks": [
+    {
+      "file": "hooks/enforce-venv.sh",
+      "matcher": "Bash",
+      "summary": "Enforce the project venv rule: a single .venv at the repo root, and EVERY Python command (pip/python/pytest/mypy/…) must run inside it — bare system-interpreter commands are blocked. Allows activation, explicit .venv/bin paths, and venv-aware runners (uv run/poetry run/tox). verify_venv* throwaways exempt."
+    },
+    {
+      "file": "hooks/enforce-venv-structure.sh",
+      "matcher": "Bash",
+      "summary": "Enforce the project venv STRUCTURE rule: virtualenv-creation commands (python -m venv, virtualenv, uv venv) must target the canonical .venv at the repo root only. Allows CI throwaway patterns (verify_venv*). Lighter-weight than enforce-venv.sh; does not check activation or bare Python commands."
+    },
+    {
+      "file": "hooks/block-destructive-migrations.sh",
+      "matcher": "Bash",
+      "summary": "Block irreversible alembic migrations (alembic downgrade base / relative rollback). Python-stack-specific, so pack-scoped rather than in the core git guard. Targeted downgrades to a specific revision are allowed."
+    }
+  ],
+
+  "templateRefs": []
+}

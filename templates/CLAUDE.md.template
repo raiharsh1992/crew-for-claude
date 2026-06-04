@@ -1,0 +1,156 @@
+# <PROJECT NAME> — Project Orientation for Claude
+
+**Read this first.** It tells the crew what this project is, where the authoritative
+rules live, and how to behave inside this codebase. This is the **rules** half of the
+context contract; `CONTEXT.md` is the **orientation** half.
+
+> **MUST READ before any code change:** [`docs/AGENT-WORKFLOW.md`](docs/AGENT-WORKFLOW.md)
+> — the binding workflow spec (branch model, PR flow, quality gates, merge authority).
+> Reading it once per session is non-negotiable.
+
+> **AT SESSION START, READ THE MEMORY INDEX:** [`.claude/memory/MEMORY.md`](.claude/memory/MEMORY.md)
+> — the crew's accumulated lessons (one line per memory). Scan it, and pull any
+> `.claude/memory/<slug>.md` whose hook line is relevant to the task at hand. This is what
+> makes the learning loop pay off: a lesson captured once is applied automatically instead of
+> re-explained. (It's not auto-loaded by the harness — reading it here is the mechanism.)
+
+---
+
+## What this project is
+
+<Two sentences. What does it do, for whom, and what's the one thing that makes mistakes
+here expensive? (e.g. "handles money", "stores health data", "is the system of record").
+Bias every decision toward whatever that is.>
+
+---
+
+## Where the authoritative docs live
+
+| File | What it is |
+|---|---|
+| `CONTEXT.md` | Orientation + domain glossary — read after this file |
+| `docs/AGENT-WORKFLOW.md` | The binding workflow spec |
+| `<path>` | <architecture overview> |
+| `<path>` | <build order / what's done vs planned> |
+| `<path>` | <per-module design docs> |
+
+More specific docs win on conflict (per-module > this file).
+
+---
+
+## The stack
+
+- **Language / framework:** <…>
+- **Data:** <…>
+- **Key libraries (don't introduce alternatives without a documented reason):** <…>
+- **How to run it locally:** <command>
+- **How to verify CI locally (run before any PR):** <command that mirrors CI>
+
+---
+
+## Architecture — the non-negotiables
+
+<The invariants every agent must memorize. Examples — keep only what's true here:>
+1. <e.g. "One database per service; cross-service refs are logical IDs, never joins.">
+2. <e.g. "Every business table carries an access-scope column; every query filters on it.">
+3. <e.g. "All writes are signed/authorized via <mechanism>.">
+4. <e.g. "Soft delete only — never hard-delete business data.">
+5. <e.g. "Audit every state change.">
+
+---
+
+## House style — the quality bar
+
+<What "good" looks like here. For UI: the design system, palette, component library, the
+reference surface to match. For backend: the patterns, the reference module to read
+first. Be specific — vagueness here is where quality drifts.>
+
+---
+
+## Auto-fail conditions (do not ship these)
+
+The critic/auditor pipeline must reject any change containing:
+- <e.g. any credential hardcoded or committed in any form>
+- <e.g. a write endpoint without its auth/signing dependency>
+- <e.g. a query missing the required access scope>
+- <e.g. hard delete on business data>
+- <e.g. a state change with no audit entry>
+- <e.g. debug print/console.log left in>
+- <e.g. a new module not cloned from the template>
+- <PYTHON PROJECTS — keep if your stack is Python: any Python command (pip/python/
+  pytest/mypy/…) run against the SYSTEM interpreter instead of the project `.venv`.
+  The python pack's `enforce-venv.sh` hook blocks this; the rule is: one `.venv` at the
+  repo root, and every Python command runs inside it — activate it, call `.venv/bin/<tool>`,
+  or use a venv-aware runner (`uv run`/`poetry run`). Never install to the system Python.>
+- Merging to the main branch before the auditor approved + CI green + the human merged
+
+---
+
+## Credential handling (NO SECRETS IN CODE OR GIT, EVER)
+
+A credential is NEVER written in code and NEVER committed — in any form, at any time.
+Always read from environment variables at runtime. `.env.example` carries placeholders
+only. Test-only secrets live in test config, never in source. If you find a secret in a
+diff or history, STOP and escalate — it must be rotated, not just deleted.
+
+---
+
+## Bug tracking — the file-first rule
+
+Any bug that won't be fixed in the current loop gets a tracker issue FIRST, before it's
+deferred, routed, or noted. In-code markers for deferred defects carry the issue URL:
+`# TODO(#<n>): …`, never a bare `TODO`. See `docs/AGENT-WORKFLOW.md` → "Bug tracking".
+
+Tracker location: <GitHub Issues on `<org/repo>` | local files under `<path>` | …>
+
+---
+
+## The crew
+
+The agents in `.claude/agents/` and skills in `.claude/skills/` are the
+`crew-for-claude` kit. Routing rules:
+- **Multi-discipline / unclear scope** → the **main session** acts as `lead-agent`
+  (a role, not a spawned agent): decompose, dispatch leads, integrate, report.
+- **Cross-module / load-bearing decision** → spawn `architect` first.
+- **Single-discipline, clear scope** → spawn the lead directly.
+- **Leads delegate only within their domain** (`junior-worker`, `critic`/`fixer`/
+  `auditor`, plus `pentester`/`tester` for their domains).
+
+---
+
+## The three loops — how this workspace orients, learns, and stays honest
+
+This kit doesn't just run forward (you → agents → code); it has **back-flow** — three loops
+that make the workspace get better the longer you use it. Each is a cheap **sensor** (a hook
+that *notices*) paired with an **actuator** (a skill that *acts*, proposing every
+version-controlled edit before making it — nothing is written silently). See
+[`docs/adr/0002-the-three-loops-auto-growing-workspace.md`](docs/adr/0002-the-three-loops-auto-growing-workspace.md).
+
+| Loop | Sensor (notices) | Actuator (acts) | What it gives you |
+|---|---|---|---|
+| **1 · Onboarding** | `onboard.sh` (SessionStart) | `/orient`, `/install` | install → *alive*: a real `CONTEXT.md` from the code, per folder shape |
+| **2 · Learning** | `suggest-memory.sh` (Stop) | `/remember` | a lesson learned once is never re-explained |
+| **3 · Freshness** | `check-freshness.sh` (SessionStart) | `drift-audit` | docs never silently drift from code |
+
+- **`/orient`** reads an existing repo and generates a trustworthy `CONTEXT.md` (data model,
+  surface, glossary). The single highest-leverage thing you can do on a new repo.
+- **`/remember`** routes a durable lesson to its home — a **rule** here in `CLAUDE.md`, an
+  **orientation fact** to `CONTEXT.md`, a **decision** to an ADR, a **preference** to
+  `.claude/memory/`. `.claude/memory/MEMORY.md` is the session-loaded index; team memories
+  are committed, personal ones (`*.local.md`) are gitignored.
+- **`drift-audit`** is the honest mirror when the freshness sensor flags a stale doc.
+- **`/status`** is the cockpit: a one-screen read-only view of all of the above — what's
+  wired, what the crew has learned, where docs drifted, and the one command that closes each
+  gap.
+
+The payoff compounds: every lesson captured is a mistake never repeated and context never
+re-paid for. Treat a correction you'll hit again as a `/remember` candidate, not a one-off.
+
+---
+
+## Working style
+
+<Project-specific working norms. Examples:>
+- Match what exists — read before you write; this codebase has strong conventions.
+- Verify in the real environment, not by eyeballing summaries.
+- Keep `CONTEXT.md` fresh in the same change as the code it describes.

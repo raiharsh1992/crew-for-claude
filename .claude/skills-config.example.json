@@ -1,0 +1,82 @@
+{
+  "$schema": "./skills-config.schema.json",
+  "$comment": "Example .claude/skills-config.json. Copy to .claude/skills-config.json and edit, or let /install generate it from what it detects on disk. Two halves: (1) issueTracker + docs (consumed by draft-prd/slice-issues/sort-issues/troubleshoot/etc.), (2) verify + packs (the 2-D language x class verify map the resolver and verify workflows read). Resolution of a repo's verify commands: verify.byRepo.<name>.overrides -> verify.defaults[<language>] -> built-in fallback.",
+
+  "issueTracker": {
+    "type": "local",
+    "$comment_type": "one of: github | local | none",
+    "localPath": "issues/",
+    "labels": {
+      "categories": ["bug", "enhancement"],
+      "states": ["needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix"]
+    }
+  },
+
+  "docs": {
+    "context": "CONTEXT.md",
+    "adrDir": "docs/adr/",
+    "prdDir": "issues/prds/"
+  },
+
+  "packs": {
+    "$comment": "Activation flags per pack. A pack supplies the verify defaults, commands, and hooks for a language. 'python-fastapi' is the one real pack shipped today; java/node/go are spec-only placeholders (see packs/PACK-SPEC.md). Activating a pack copies its hooks into .claude/hooks/ and wires them into settings.json.",
+    "python-fastapi": true,
+    "java": false,
+    "node": false,
+    "go": false
+  },
+
+  "verify": {
+    "$comment": "The 2-D language x class verify map. defaults[<language>] gives the command chain for a language; byRepo.<name> pins a repo's language+class and may override individual commands. Commands are shell strings run from the repo root. Empty string = that stage is a no-op for this language.",
+
+    "defaults": {
+      "java": {
+        "$comment": "mvn or gradle, selected by the presence of a wrapper (mvnw / gradlew). Adjust to your build tool.",
+        "verify": "./mvnw -q verify",
+        "lint": "./mvnw -q spotless:check",
+        "test": "./mvnw -q test"
+      },
+      "node": {
+        "$comment": "<pm> is resolved by lockfile: pnpm-lock.yaml -> pnpm, yarn.lock -> yarn, package-lock.json -> npm. Replace <pm> with the resolved manager (the installer writes the concrete one).",
+        "verify": "<pm> run build",
+        "lint": "<pm> run lint",
+        "test": "<pm> test"
+      },
+      "python": {
+        "$comment": "Genericized lint + test + coverage chain. Assumes a .venv at the repo root (see the python-fastapi pack's venv hook). Swap flake8/pytest for ruff/etc. if your project differs.",
+        "verify": "flake8 . && mypy . && pytest --cov --cov-report=term-missing",
+        "lint": "flake8 . && mypy .",
+        "test": "pytest --cov --cov-report=term-missing"
+      },
+      "go": {
+        "verify": "go vet ./... && go test ./...",
+        "lint": "go vet ./...",
+        "test": "go test ./..."
+      },
+      "infra": {
+        "verify": "terraform validate && terraform fmt -check -recursive",
+        "lint": "terraform fmt -check -recursive",
+        "test": ""
+      }
+    },
+
+    "byRepo": {
+      "$comment": "Per-repo pinning + overrides. 'language' and 'class' pin what the resolver would otherwise infer. 'overrides' replaces individual command stages for THIS repo only; unspecified stages fall through to defaults[language].",
+      "example-api": {
+        "language": "python",
+        "class": "SERVICE"
+      },
+      "example-web": {
+        "language": "node",
+        "class": "UI",
+        "overrides": {
+          "test": "npm run test:ci"
+        }
+      },
+      "example-infra": {
+        "language": "infra",
+        "class": "INFRA"
+      }
+    }
+  }
+}

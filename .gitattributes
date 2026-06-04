@@ -1,0 +1,30 @@
+# Line-ending policy. The hooks are bash scripts that MUST stay LF even when checked out on
+# Windows (with core.autocrlf=true a CRLF shebang becomes `/bin/bash^M: bad interpreter`, and
+# a CRLF Python heredoc inside suggest-memory.sh breaks with IndentationError). Pinning the
+# script types to LF makes the safety backstop AND the three-loop sensors survive any clone.
+
+* text=auto
+
+# Always LF — executable scripts and the embedded Python they carry.
+*.sh   text eol=lf
+*.bash text eol=lf
+*.py   text eol=lf
+
+# Pin the agent-framework config tree to LF too. On Windows with core.autocrlf=true,
+# every checkout flips these files back to CRLF — and the agent-file-discovery loader
+# can choke on a CRLF agent .md and SILENTLY DROP it from the spawnable registry (the
+# file is valid, it just never appears as a subagent_type). The symptom is maddening:
+# "Agent type 'X' not found" for one agent while its identical-looking siblings load
+# fine, and it survives a session restart because autocrlf re-introduces the CRLF on
+# the next checkout. Pinning eol=lf makes the normalization durable so this can't recur.
+# (Seen in the field: an agent that wouldn't spawn twice in one day until the framework
+# config was pinned to LF.)
+.claude/agents/*.md      text eol=lf
+.claude/skills/**/*.md   text eol=lf
+.claude/commands/*.md    text eol=lf
+.claude/workflows/*.js   text eol=lf
+.claude/**/*.json        text eol=lf
+
+# Windows-native scripts stay CRLF.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf

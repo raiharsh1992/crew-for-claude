@@ -1,0 +1,60 @@
+{
+  "$schema": "./skills-config.schema.json",
+  "$comment": "Default config for crew-for-claude. Replace issueTracker, verify, and packs with values that match your project. Run /install to generate this file automatically from detected stack markers.",
+
+  "issueTracker": {
+    "type": "local",
+    "$comment_type": "github | local | none. Set to 'github' and add 'repo' field (e.g. 'owner/repo') for GitHub Issues.",
+    "localPath": "issues/",
+    "labels": {
+      "categories": ["bug", "enhancement"],
+      "states": ["needs-triage", "needs-info", "ready-for-agent", "ready-for-human", "wontfix"],
+      "severity": ["severity:critical", "severity:high", "severity:medium", "severity:low"],
+      "category": ["category:bug", "category:security", "category:correctness", "category:hygiene", "category:infra", "category:test-coverage", "category:design-note", "category:enhancement"],
+      "$comment_service": "Service labels are project-specific and should be added by the consumer. Examples: service:auth, service:customer-mgmt, service:accounting, etc."
+    }
+  },
+
+  "docs": {
+    "context": "CONTEXT.md",
+    "adrDir": "docs/adr/",
+    "prdDir": "docs/prds/",
+    "adrNote": "ADR (Architecture Decision Record) numbering discipline: workspace-level ADRs are numbered sequentially at the workspace root (docs/adr/); per-service or per-repo ADRs live in each service's or repo's own docs/adr/ directory and use independent numbering."
+  },
+
+  "packs": {
+    "$comment": "Activation flags per pack. A pack supplies the verify defaults, commands, and hooks for a language. 'python-fastapi' is the one real pack shipped today; java/node/go are spec-only placeholders (see packs/PACK-SPEC.md).",
+    "python-fastapi": false,
+    "java": false,
+    "node": false,
+    "go": false
+  },
+
+  "verify": {
+    "$comment": "The 2-D language x class verify map. defaults[<language>] gives the command chain for a language; byRepo.<name> pins a repo's language+class and may override individual commands. Commands are shell strings run from the repo root.",
+    "defaults": {
+      "python": {
+        "verify": "flake8 . && mypy . && pytest --cov --cov-report=term-missing",
+        "lint": "flake8 . && mypy .",
+        "test": "pytest --cov --cov-report=term-missing"
+      },
+      "node": {
+        "verify": "<pm> run build",
+        "lint": "<pm> run lint",
+        "test": "<pm> test"
+      },
+      "infra": {
+        "verify": "terraform validate && terraform fmt -check -recursive",
+        "lint": "terraform fmt -check -recursive",
+        "test": ""
+      }
+    },
+    "byRepo": {}
+  },
+
+  "crossTeamRequestDir": "plan/cross-team/",
+
+  "crossTeamLabels": ["team:devops", "team:backend", "team:frontend"],
+
+  "attributionTrailer": ""
+}

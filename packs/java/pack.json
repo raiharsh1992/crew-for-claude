@@ -1,0 +1,9 @@
+{
+  "id": "java",
+  "displayName": "Java (Maven / Gradle)",
+  "status": "spec-only",
+  "language": "java",
+  "markers": ["pom.xml", "build.gradle", "build.gradle.kts"],
+  "classHint": "SERVICE",
+  "$note": "FUTURE — spec-only placeholder. No commands or hooks installed yet. To flesh this out into an active pack, see ../PACK-SPEC.md ('Authoring a new pack')."
+}

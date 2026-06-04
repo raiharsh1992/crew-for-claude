@@ -1,0 +1,123 @@
+{
+  "$comment": "Sample settings for crew-for-claude. The hook wiring is the important part — it makes the git/secrets backstop fire on every Bash call and the secret backstop fire on every file write. Adjust permissions to your comfort: the example below is a dev-phase posture (broad allow + a hard hook backstop). Narrow the allow list before any deployed environment.",
+  "permissions": {
+    "allow": [],
+    "$comment_permissions": "Start strict and add what you trust, OR run a broad allow during heavy dev (e.g. \"Bash(*)\", \"Write(*)\") RELYING ON the hooks below as the real backstop. The hooks block irreversible ops and secret writes regardless of the allow list."
+  },
+  "hooks": {
+    "$comment_sessionstart": "The onboarding + freshness SENSORS (Loops 1 and 3; see docs/adr/0002). onboard.sh fires on a FRESH/un-installed repo and surfaces the right 'install -> alive' offer per folder shape (empty / single repo / multi-repo); it goes silent once the crew is installed AND CONTEXT.md is authored. check-freshness.sh fires on an ALREADY-installed+oriented repo and nudges toward drift-audit when CONTEXT.md looks stale vs the code (cheap git-commit-count heuristic). Both are read-only, never block, fail silent. Their actuators are /orient and drift-audit respectively.",
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/onboard.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/check-freshness.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-dangerous-git.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-cd-escape.sh"
+          },
+          {
+            "$comment_attribution": "Blocks vendor/model-tier names on the git surface (commit messages) when attributionTrailer is configured in skills-config.json. Default OFF (no-op) when attributionTrailer is empty.",
+            "type": "command",
+            "command": ".claude/hooks/block-claude-attribution.sh"
+          }
+        ]
+      },
+      {
+        "$comment_read": "Path-safety on the Read surface: block-path-escape.sh stops an absolute-path Read into a sibling repo (the cross-repo hole the cwd-only block-cd-escape.sh cannot reach). Tunable via PATH_ALLOWED_ROOTS.",
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-path-escape.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-secrets-in-writes.sh"
+          },
+          {
+            "$comment_memsize": "Keeps each .claude/memory/*.md under ~24KB. Over the ceiling it blocks the write and instructs the agent to compress/consolidate older records (or split a topic out) THEN re-write — 'make room, then continue', not a hard stop. Tunable via MEMORY_MAX_BYTES / MEMORY_WARN_BYTES.",
+            "type": "command",
+            "command": ".claude/hooks/guard-memory-size.sh"
+          },
+          {
+            "$comment_pathescape": "Path-safety on the write surface: blocks an absolute-path Write/Edit into a sibling repo. Tunable via PATH_ALLOWED_ROOTS.",
+            "type": "command",
+            "command": ".claude/hooks/block-path-escape.sh"
+          },
+          {
+            "$comment_arch": "Architecture-violation guard. arch-patterns.example.sh ships EMPTY (a safe no-op) — a consumer fills it with their CLAUDE.md auto-fail regexes (rename to arch-patterns.sh). Until filled it blocks nothing.",
+            "type": "command",
+            "command": ".claude/hooks/block-architecture-violations.sh"
+          }
+        ]
+      },
+      {
+        "$comment_lane": "Agent lane discipline (see .claude/memory/agent-lane-discipline.md): block spawning the orchestrator (lead-agent) as a sub-agent — it self-blocks on nested Task/Bash and wastes tokens. Orchestration is done by the main session; only domain leads/workers are spawnable.",
+        "matcher": "Task",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-lead-agent-spawn.sh"
+          }
+        ]
+      }
+    ],
+    "$comment_drift_dormant": "DORMANT ON PURPOSE: .claude/hooks/check-doctrine-drift.sh ships but is intentionally NOT wired below. Once wired it BLOCKS any workflow whose inlined _doctrine.js canonical region drifts — but the existing crew workflows don't yet inline the region (the retrofit is pending). Wire it (a Write|Edit|MultiEdit PreToolUse entry) ONLY after every workflow inlines the region, else editing them bricks.",
+    "$comment_posttooluse": "Advisory nudges (never block; always exit 0). post-edit-nudges.sh nudges on missing-test-companion / stale-CONTEXT after a code edit; handoff-threshold-nudge.sh nudges a long-running lead toward /context-handoff at safe thresholds.",
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-edit-nudges.sh"
+          }
+        ]
+      },
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/handoff-threshold-nudge.sh"
+          }
+        ]
+      }
+    ],
+    "$comment_stop": "The learning loop's SENSOR. suggest-memory.sh fires when the main agent finishes a turn, reads the last user message from the transcript, and — if it looks like a durable lesson (a correction, a 'from now on', a locked decision, a preference) — surfaces a one-line nudge to run /remember. It NEVER writes and NEVER blocks; it only notices. /remember (the skill) is the write half, and it proposes every version-controlled edit before making it. Together they are the back-flow that makes the crew auto-grow.",
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/suggest-memory.sh"
+          }
+        ]
+      }
+    ],
+    "$comment_packs": "When a pack is activated (e.g. python-fastapi), the installer adds that pack's hooks here too. The python-fastapi pack adds a Bash-matcher entry for .claude/hooks/enforce-venv.sh (copied from packs/python-fastapi/hooks/ on activation). That hook enforces the crew's Python venv rule: ONE .venv at the repo root and EVERY Python command (pip/python/pytest/mypy/…) runs inside it — bare system-interpreter commands are blocked. This kit repo has no Python project code of its own, so the entry is not added here; the moment Python is added (here or in any consumer), /install (or a hand-add of the entry below) turns it on.",
+    "$example_python_pack_entry": { "matcher": "Bash", "hooks": [ { "type": "command", "command": ".claude/hooks/enforce-venv.sh" } ] }
+  }
+}
