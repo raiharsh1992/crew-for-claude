@@ -190,7 +190,7 @@ toolchains in core.
      deliberate migration breadcrumb, not a dangling ref, and is kept.
 
 ### Audit gates — RUN THIS SESSION, all green
-- `grep -rilE "resoudre|rhslabs|raiharsh|binay|razorpay|resoudretech|crew4claude" .claude packs docs README.md`
+- `Run a project-specific-terms sweep (business names, client names, personal handles) before publishing`
   → only this ADR (which *documents* the grep command itself); `.claude`/`packs` surface clean.
 - all 6 `.claude/workflows/*.js` pass `node --check`; every `meta.name` == filename slug.
 - no workflow inlines a repo array; no core workflow hardcodes `pytest`/`npm`/`mvn`/`gradle`.
